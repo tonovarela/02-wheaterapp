@@ -4,7 +4,7 @@
 
 - `bun install` — install deps (not `npm install`)
 - `bun test` — run tests (not `jest`/`vitest`)
-- `bun run --hot ./index.ts` — dev server with HMR
+- `bun start` — run the CLI
 
 ## Toolchain
 
@@ -15,8 +15,9 @@
 ## Testing
 
 - Use `bun test` with `bun:test` (import from `"bun:test"`).
-- Example: `bun test index.test.ts`.
-- No test server fixtures needed — tests are unit-only currently.
+- Tests live next to the code: `src/*.test.ts`.
+- Unit-only — nothing hits the network. Storage tests point `WEATHER_CLI_CONFIG`
+  at a temp file; UI tests rely on colors being off when stdout is not a TTY.
 
 ## TypeScript
 
@@ -26,9 +27,21 @@
 
 ## Project structure
 
-- `index.ts` — entry point (currently just `console.log("Hello via Bun!")`).
+- `index.ts` — entry point; calls `run()` from `src/menu.ts`.
+- `src/api.ts` — OpenMeteo clients (geocoding + forecast). No API key needed.
+- `src/storage.ts` — config persistence (`~/.weather-cli.json`, override with
+  `WEATHER_CLI_CONFIG`) plus pure helpers over `Config` (add/remove/set default).
+- `src/menu.ts` — menu loop; each option is its own handler returning the new `Config`.
+- `src/prompt.ts` — stdin line reader, two paths on purpose: `node:readline` on a
+  TTY (line editing + history), Bun's `console` async iterator otherwise.
+  **Keep the non-TTY path**: in Bun 1.4 readline closes the interface after the
+  first line when stdin is not a TTY (`ERR_USE_AFTER_CLOSE`), which breaks piped
+  input. `ask()` returns `null` on EOF and `run()` must call `closePrompt()` so
+  the process can exit.
+- `src/ui.ts` — ANSI colors (TTY-only) and all rendering.
+- `src/weather-codes.ts` — WMO code → description + icon.
+- `src/types.ts` — shared types and `cityKey`/`cityLabel` helpers.
 - `bun.lock` — lockfile, committed.
-- `OpenMeteo` API used for weather (geocoding + forecast).
 - `node_modules/` and `out/`/`dist/` are gitignored.
 
 ## Commands cheat-sheet
@@ -36,10 +49,10 @@
 | Action | Command |
 |---|---|
 | Install deps | `bun install` |
-| Run app | `bun --hot ./index.ts` |
-| Build | `bun build ./index.ts` |
+| Run app | `bun start` |
+| Build binary | `bun run build` → `./dist/weather` |
 | Test | `bun test` |
-| Lint/typecheck | (none configured beyond tsc) |
+| Typecheck | `bun run typecheck` |
 
 ## What to avoid
 

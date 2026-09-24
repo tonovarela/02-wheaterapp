@@ -46,3 +46,35 @@ Esta es la apariencia que deseamos crear
 ════════════════════════════════════════
   Selecciona una opción: 5
 ```
+
+## Uso
+
+```bash
+bun install          # instalar dependencias
+bun start            # ejecutar la app
+bun test             # correr las pruebas
+bun run typecheck    # verificar tipos
+bun run build        # generar el binario en ./dist/weather
+```
+
+El binario es autocontenido: `./dist/weather` se puede copiar a cualquier parte
+(por ejemplo `/usr/local/bin/weather`) y ejecutar sin tener Bun instalado.
+
+## Persistencia
+
+Las ciudades, la ciudad default y la unidad (°C/°F) se guardan en
+`~/.weather-cli.json`. La variable de entorno `WEATHER_CLI_CONFIG` permite
+apuntar a otra ruta (se usa en las pruebas).
+
+## Estructura
+
+```
+index.ts                  punto de entrada
+src/api.ts                clientes de Geocoding y Forecast (OpenMeteo)
+src/storage.ts            carga/guardado de la config y operaciones sobre ciudades
+src/menu.ts               bucle del menú y manejo de cada opción
+src/prompt.ts             lectura de líneas desde stdin
+src/ui.ts                 colores y render del menú / tarjetas de clima
+src/weather-codes.ts      códigos WMO -> descripción e ícono
+src/types.ts              tipos compartidos
+```
