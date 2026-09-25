@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run ./index.ts",
+    "dev": "bun run ./index.ts --watch",
     "start": "bun run ./index.ts",
     "build": "bun build ./index.ts --compile --minify --outfile ./dist/weather",
     "typecheck": "tsc --noEmit"

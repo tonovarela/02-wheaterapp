@@ -1,4 +1,4 @@
-import type { City, Config, CurrentWeather, Unit } from './types.ts'
+import type { City, Config, CurrentWeather, ForecastDay, Unit } from './types.ts'
 import { cityKey, cityLabel } from './types.ts'
 import { describeWeatherCode } from './weather-codes.ts'
 
@@ -47,6 +47,7 @@ export function renderMenu(config: Config): string {
     ['3', 'Buscar y agregar ciudad'],
     ['4', 'Eliminar ciudad'],
     ['5', 'Establecer ciudad default'],
+    ['6', 'Pronóstico 7 días'],
     ['8', `Ajustes (${unitLabel(config.unit)})`],
     ['9', 'Salir'],
   ] as const
@@ -97,6 +98,47 @@ export function renderWeatherLine(city: City, weather: CurrentWeather, unit: Uni
 /** Recorta o rellena a un ancho fijo, para que las columnas queden alineadas. */
 function fit(text: string, width: number): string {
   return text.length > width ? `${text.slice(0, width - 1)}…` : text.padEnd(width)
+}
+
+const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+
+/** `2026-09-26` → `sáb 26/09`. En UTC para no correr de día según la zona local. */
+function dayLabel(date: string): string {
+  const parsed = new Date(`${date}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime())) return date
+
+  const weekday = WEEKDAYS[parsed.getUTCDay()] ?? ''
+  const day = String(parsed.getUTCDate()).padStart(2, '0')
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+  return `${weekday} ${day}/${month}`
+}
+
+/** Tarjeta con una fila por día: fecha, condición y máx/mín. */
+export function renderForecastCard(city: City, days: ForecastDay[], unit: Unit): string {
+  const header = `  ${fit('DÍA', 9)}    ${fit('CONDICIÓN', 16)} ${'MÁX/MÍN'}`
+
+  const rows = days.map((day, index) => {
+    const { description, icon } = describeWeatherCode(day.weatherCode)
+    const label = index === 0 ? 'Hoy' : dayLabel(day.date)
+    const temp =
+      `${String(Math.round(day.temperatureMax)).padStart(3)}` +
+      `/${String(Math.round(day.temperatureMin)).padStart(3)}`
+
+    return (
+      `  ${fit(label, 9)} ${icon} ` +
+      `${color.dim(fit(description, 16))} ${color.magenta(temp)}`
+    )
+  })
+
+  return [
+    color.cyan(RULE),
+    `  ${color.bold(cityLabel(city))}`,
+    color.dim(`  Pronóstico 7 días · máx/mín en ${unitLabel(unit)}`),
+    '',
+    color.dim(header),
+    ...rows,
+    color.cyan(RULE),
+  ].join('\n')
 }
 
 export function info(message: string): void {

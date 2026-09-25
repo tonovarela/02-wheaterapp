@@ -1,4 +1,4 @@
-import { getCurrentWeather, searchCities } from './api.ts'
+import { getCurrentWeather, getDailyForecast, searchCities } from './api.ts'
 import { ask, closePrompt } from './prompt.ts'
 import {
   addCity,
@@ -16,6 +16,7 @@ import {
   error,
   info,
   renderCityList,
+  renderForecastCard,
   renderMenu,
   renderWeatherCard,
   renderWeatherLine,
@@ -58,6 +59,9 @@ async function loop(): Promise<void> {
         break
       case '5':
         config = await chooseDefaultCity(config)
+        break
+      case '6':
+        await showForecast(config)
         break
       case '8':
         config = await toggleUnit(config)
@@ -113,6 +117,32 @@ async function showAllCities(config: Config): Promise<void> {
       error(`${cityLabel(city)}: ${describeError(result.reason)}`)
     }
   })
+}
+
+async function showForecast(config: Config): Promise<void> {
+  const city = await pickForecastCity(config)
+  if (!city) return
+
+  info(`Consultando pronóstico de ${cityLabel(city)}...`)
+  try {
+    const days = await getDailyForecast(city, config.unit)
+    console.log()
+    console.log(renderForecastCard(city, days, config.unit))
+  } catch (err) {
+    error(`No se pudo obtener el pronóstico: ${describeError(err)}`)
+  }
+}
+
+/** Con una ciudad registrada no hay nada que elegir; con varias, deja elegir. */
+async function pickForecastCity(config: Config): Promise<City | null> {
+  if (config.cities.length === 0) {
+    warn('No hay ciudades registradas. Usa la opción 3 para agregar una.')
+    return null
+  }
+  if (config.cities.length === 1) return config.cities[0] ?? null
+
+  console.log(renderCityList(config))
+  return pick(config.cities, '\n  Número de la ciudad a pronosticar: ')
 }
 
 async function searchAndAddCity(config: Config): Promise<Config> {
