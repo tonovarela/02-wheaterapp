@@ -1,19 +1,6 @@
-import type { City, CurrentWeather, ForecastDay, Unit } from './types.ts'
-
-const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search'
-const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
-
-interface GeocodingResult {
-  name: string
-  country?: string
-  admin1?: string
-  latitude: number
-  longitude: number
-}
-
-interface GeocodingResponse {
-  results?: GeocodingResult[]
-}
+import type { City } from '../types/City.ts'
+import type { CurrentWeather, ForecastDay, Unit } from '../types/Weather.ts'
+import { FORECAST_URL } from '../utils/constants.ts'
 
 interface ForecastResponse {
   current?: {
@@ -33,26 +20,7 @@ interface ForecastResponse {
   }
 }
 
-/** Paso 1: Geocoding API — resuelve un nombre de ciudad a coordenadas. */
-export async function searchCities(name: string, count = 5): Promise<City[]> {
-  const url = `${GEOCODING_URL}?name=${encodeURIComponent(name)}&count=${count}&language=es&format=json`
-
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Geocoding API respondió ${response.status}`)
-  }
-
-  const data = (await response.json()) as GeocodingResponse
-  return (data.results ?? []).map(result => ({
-    name: result.name,
-    country: result.country ?? '',
-    admin1: result.admin1,
-    latitude: result.latitude,
-    longitude: result.longitude,
-  }))
-}
-
-/** Paso 2: Forecast API — clima actual para unas coordenadas. */
+/** Forecast API — clima actual para unas coordenadas. */
 export async function getCurrentWeather(city: City, unit: Unit): Promise<CurrentWeather> {
   const params = new URLSearchParams({
     latitude: String(city.latitude),
@@ -87,7 +55,7 @@ export async function getCurrentWeather(city: City, unit: Unit): Promise<Current
   }
 }
 
-/** Paso 2b: Forecast API — pronóstico diario de los próximos 7 días. */
+/** Forecast API — pronóstico diario de los próximos 7 días. */
 export async function getDailyForecast(city: City, unit: Unit): Promise<ForecastDay[]> {
   const params = new URLSearchParams({
     latitude: String(city.latitude),

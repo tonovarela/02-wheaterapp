@@ -1,64 +1,13 @@
-import type { City, Config, CurrentWeather, ForecastDay, Unit } from './types.ts'
-import { cityKey, cityLabel } from './types.ts'
-import { describeWeatherCode } from './weather-codes.ts'
-
-const WIDTH = 40
-const RULE = '═'.repeat(WIDTH)
-
-/** Solo se colorea en una terminal real: al redirigir a un archivo o pipe estorba. */
-const enabled = process.stdout.isTTY === true && !process.env.NO_COLOR
-
-function paint(code: string) {
-  return (text: string) => (enabled ? `\x1b[${code}m${text}\x1b[0m` : text)
-}
-
-export const color = {
-  bold: paint('1'),
-  dim: paint('2'),
-  red: paint('31'),
-  green: paint('32'),
-  yellow: paint('33'),
-  blue: paint('34'),
-  magenta: paint('35'),
-  cyan: paint('36'),
-}
+import { cityKey, cityLabel, type City } from '../types/City.ts'
+import type { Config } from '../types/Config.ts'
+import type { CurrentWeather, ForecastDay, Unit } from '../types/Weather.ts'
+import { color } from '../utils/colors.ts'
+import { RULE } from '../utils/constants.ts'
+import { dayLabel, fit, unitLabel, windUnit } from '../utils/format.ts'
+import { describeWeatherCode } from '../utils/weatherCodes.ts'
 
 export function clear(): void {
   process.stdout.write('\x1b[2J\x1b[H')
-}
-
-export function unitLabel(unit: Unit): string {
-  return unit === 'C' ? '°C' : '°F'
-}
-
-export function windUnit(unit: Unit): string {
-  return unit === 'C' ? 'km/h' : 'mph'
-}
-
-function center(text: string): string {
-  const padding = Math.max(0, Math.floor((WIDTH - text.length) / 2))
-  return ' '.repeat(padding) + text
-}
-
-export function renderMenu(config: Config): string {
-  const options = [
-    ['1', 'Clima de ciudad default'],
-    ['2', `Clima de todas las ciudades (${config.cities.length})`],
-    ['3', 'Buscar y agregar ciudad'],
-    ['4', 'Eliminar ciudad'],
-    ['5', 'Establecer ciudad default'],
-    ['6', 'Pronóstico 7 días'],
-    ['8', `Ajustes (${unitLabel(config.unit)})`],
-    ['9', 'Salir'],
-  ] as const
-
-  return [
-    color.cyan(RULE),
-    color.bold(center('WEATHER CLI')),
-    color.cyan(RULE),
-    ...options.map(([key, label]) => `  ${color.yellow(key)}. ${label}`),
-    color.cyan(RULE),
-  ].join('\n')
 }
 
 export function renderCityList(config: Config): string {
@@ -67,6 +16,13 @@ export function renderCityList(config: Config): string {
       const marker = cityKey(city) === config.defaultCity ? color.green(' ★ default') : ''
       return `  ${color.yellow(String(index + 1))}. ${cityLabel(city)}${marker}`
     })
+    .join('\n')
+}
+
+/** Listado numerado de ciudades, para elegir una de la lista. */
+export function renderCityOptions(cities: City[]): string {
+  return cities
+    .map((city, index) => `  ${color.yellow(String(index + 1))}. ${cityLabel(city)}`)
     .join('\n')
 }
 
@@ -93,24 +49,6 @@ export function renderWeatherLine(city: City, weather: CurrentWeather, unit: Uni
   const { description, icon } = describeWeatherCode(weather.weatherCode)
   const temp = `${weather.temperature.toFixed(1)}${unitLabel(unit)}`.padStart(8)
   return `  ${icon}  ${color.bold(fit(cityLabel(city), 30))} ${color.magenta(temp)}  ${color.dim(description)}`
-}
-
-/** Recorta o rellena a un ancho fijo, para que las columnas queden alineadas. */
-function fit(text: string, width: number): string {
-  return text.length > width ? `${text.slice(0, width - 1)}…` : text.padEnd(width)
-}
-
-const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-
-/** `2026-09-26` → `sáb 26/09`. En UTC para no correr de día según la zona local. */
-function dayLabel(date: string): string {
-  const parsed = new Date(`${date}T00:00:00Z`)
-  if (Number.isNaN(parsed.getTime())) return date
-
-  const weekday = WEEKDAYS[parsed.getUTCDay()] ?? ''
-  const day = String(parsed.getUTCDate()).padStart(2, '0')
-  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
-  return `${weekday} ${day}/${month}`
 }
 
 /** Tarjeta con una fila por día: fecha, condición y máx/mín. */

@@ -70,13 +70,27 @@ apuntar a otra ruta (se usa en las pruebas).
 
 ## Estructura
 
+La estructura detallada vive en [`docs/file-system.md`](docs/file-system.md).
+
 ```
-index.ts                  punto de entrada
-src/api.ts                clientes de Geocoding y Forecast (OpenMeteo)
-src/storage.ts            carga/guardado de la config y operaciones sobre ciudades
-src/menu.ts               bucle del menú y manejo de cada opción
-src/prompt.ts             lectura de líneas desde stdin
-src/ui.ts                 colores y render del menú / tarjetas de clima
-src/weather-codes.ts      códigos WMO -> descripción e ícono
-src/types.ts              tipos compartidos
+src/
+├── actions/            acciones del menú
+│   ├── getWeather.ts       clima de la ciudad default
+│   ├── listCities.ts       clima de todas las ciudades
+│   ├── getForecast.ts      pronóstico de 7 días
+│   ├── addCity.ts          buscar y agregar una ciudad
+│   ├── removeCity.ts       eliminar una ciudad
+│   ├── setDefaultCity.ts   cambiar la ciudad default
+│   └── toggleUnit.ts       alternar °C/°F
+├── presentation/       interacción con la consola
+│   ├── menu.ts             bucle del menú y render de opciones
+│   ├── output.ts           mensajes y tarjetas de clima
+│   └── input.ts            lectura y validación de stdin
+├── storage/            datos locales (~/.weather-cli.json)
+│   ├── citiesStorage.ts    operaciones sobre la lista de ciudades
+│   └── settingsStorage.ts  carga/guardado de la config
+├── types/              contratos globales (City, Config, Weather, MenuOption)
+├── api/                clientes de OpenMeteo (geocoding.ts, weather.ts)
+├── utils/              helpers (colors, format, constants, weatherCodes)
+└── index.ts            punto de entrada
 ```

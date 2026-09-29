@@ -1,4 +1,4 @@
-interface CodeInfo {
+export interface CodeInfo {
   description: string
   icon: string
 }

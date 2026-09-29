@@ -1,4 +1,5 @@
 import { createInterface, type Interface } from 'node:readline/promises'
+import { error } from './output.ts'
 
 /**
  * Lectura de líneas desde stdin.
@@ -50,4 +51,17 @@ export async function ask(question: string): Promise<string | null> {
 export function closePrompt(): void {
   terminal?.iface.close()
   terminal = null
+}
+
+/** Pide un número de la lista (1-based) y devuelve el elemento, o `null` si es inválido. */
+export async function pick<T>(items: T[], question: string): Promise<T | null> {
+  const answer = await ask(question)
+  if (answer === null) return null
+
+  const item = items[Number.parseInt(answer, 10) - 1]
+  if (!item) {
+    error('Selección inválida.')
+    return null
+  }
+  return item
 }
