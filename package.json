@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "bun run ./src/index.ts --watch",
     "start": "bun run ./src/index.ts",
-    "build": "bun build ./src/index.ts --compile --minify --outfile ./dist/weather",
-    "typecheck": "tsc --noEmit"
+    "test": "bun test test/**/*.test.ts",
+    "test:coverage": "bun test test/**/*.test.ts --coverage",
+    "typecheck": "tsc --noEmit",
+    "build": "bun run test && bun build ./src/index.ts --compile --minify --outfile ./dist/weather"
   },
   "devDependencies": {
     "@types/bun": "latest"
